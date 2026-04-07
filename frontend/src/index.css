@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply text-slate-900;
+}
+
+.fc .fc-toolbar-title {
+  @apply text-base md:text-lg font-semibold;
+}
