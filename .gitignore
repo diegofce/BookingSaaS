@@ -4,6 +4,8 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+AGENTS.md
+docker-compose.yml
 
 # Environment / secrets
 .env

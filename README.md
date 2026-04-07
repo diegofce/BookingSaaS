@@ -1,305 +1,168 @@
 # Booking SaaS
 
-Plataforma SaaS para gestion de reservas y agenda de negocios. El proyecto permite registrar un negocio, autenticar usuarios del tenant, administrar clientes, servicios, empleados, horarios y citas, y ofrecer una agenda publica para que clientes finales puedan reservar en linea. Ademas, incorpora recordatorios programados en segundo plano con Celery y Redis.
+Booking SaaS is a multi-tenant appointment management platform built for service businesses that need both an internal operations dashboard and a public-facing booking flow. The project combines a FastAPI backend, a React frontend, tenant-aware authentication, booking availability logic, and asynchronous reminder scheduling.
 
-## Caracteristicas principales
+This repository showcases a realistic full-stack product architecture rather than an isolated CRUD demo. It includes protected backoffice workflows for staff, a public reservation experience for end customers, database migrations, automated tests, and background job orchestration.
 
-- Autenticacion con `access token` y `refresh token` por cookie.
-- Arquitectura multi-tenant basada en `negocio` y `dominio`.
-- CRUD de clientes, servicios, empleados, horarios y citas.
-- Agenda publica por negocio para consultar disponibilidad y reservar.
-- Recordatorios asincronos para citas usando Celery + Redis.
-- Backend con migraciones de base de datos mediante Alembic.
-- Frontend SPA en React con rutas privadas y flujo publico de reservas.
+## Product Scope
 
-## Roles y permisos
+The platform is designed around a `negocio` as the tenant boundary. Each business can manage its own:
 
-El sistema define tres roles de usuario:
+- services
+- clients
+- employees
+- business hours
+- appointments
+- public booking page
 
-- `admin`: acceso total al negocio. Puede crear, editar y eliminar usuarios, servicios, horarios, clientes y citas, ademas de administrar la configuracion operativa del tenant.
-- `empleado`: acceso operativo al backoffice. Puede consultar y gestionar citas y acceder a informacion necesaria para la operacion diaria, con permisos mas limitados que el administrador.
-- `cliente`: rol de usuario final sin acceso al backoffice administrativo.
+The system also supports:
 
-Notas importantes sobre el modelo funcional:
+- tenant-scoped authentication with access token + refresh token flow
+- role-based access for `admin` and `empleado`
+- public booking by business slug/domain
+- appointment conflict prevention
+- reminder job scheduling with Celery + Redis
+- automated database migrations with Alembic
 
-- El primer usuario `admin` no viene precargado por defecto; se crea cuando se registra un negocio mediante `POST /negocios/register`.
-- La reserva publica no depende de que exista un usuario autenticado con rol `cliente`. En ese flujo, el sistema crea registros en la entidad `Cliente` asociada al negocio para agendar citas.
-- En otras palabras, `usuarios` representa cuentas autenticables del sistema y `clientes` representa personas atendidas por el negocio.
+## Why This Project Matters
 
-## Stack tecnologico
+This project reflects the kind of engineering problems found in production SaaS systems:
 
-### Backend
+- tenant isolation across API and persistence layers
+- role-aware access control for internal operations
+- availability calculation based on business hours and existing bookings
+- consistency between appointment lifecycle changes and background reminder jobs
+- separation of concerns across routers, services, CRUD helpers, schemas, and models
 
-- FastAPI
-- SQLAlchemy 2.0
-- Alembic
-- PostgreSQL
-- Celery
-- Redis
-- Pydantic Settings
-- SlowAPI
+It is intentionally organized as a maintainable backend/frontend codebase rather than a single-file prototype.
 
-### Frontend
-
-- React 18
-- TypeScript
-- Vite
-- Axios
-- Tailwind CSS
-- FullCalendar
-- Vitest
-- Playwright
-
-### Infraestructura y desarrollo
-
-- Docker Compose
-- Python 3.13
-- Node.js 20+ recomendado
-
-## Estructura del proyecto
-
-```text
-booking_saas/
-|-- backend/
-|   |-- app/
-|   |   |-- routers/
-|   |   |-- services/
-|   |   |-- crud/
-|   |   |-- models/
-|   |   |-- schemas/
-|   |   |-- core/
-|   |   `-- db/
-|   |-- alembic/
-|   |-- scripts/
-|   |-- requirements.txt
-|   `-- .env.example
-|-- frontend/
-|   |-- src/
-|   |-- tests/
-|   `-- package.json
-|-- docker-compose.yml
-|-- .gitignore
-`-- README.md
-```
-
-## Que hace el sistema
-
-El backend expone endpoints para autenticacion, registro de negocios, usuarios, clientes, servicios, horarios, citas y agenda publica. El frontend incluye un panel privado para la operacion del negocio y una experiencia publica para que un cliente consulte servicios, vea horarios disponibles y cree su reserva.
-
-## Capturas de pantalla
-
-Las capturas del proyecto se organizan en `docs/screenshots/`.
-
-### Login
-
-
-
-### Dashboard
-
-
-
-### Agenda
-
-
-
-Rutas y modulos relevantes:
-
-- `backend/app/routers/auth.py`: login, refresh, logout y usuario autenticado.
-- `backend/app/routers/negocios.py`: registro de negocio.
-- `backend/app/routers/clientes.py`: gestion de clientes.
-- `backend/app/routers/servicios.py`: gestion de servicios.
-- `backend/app/routers/usuarios.py`: gestion de empleados/usuarios.
-- `backend/app/routers/citas.py`: agenda interna y recordatorios.
-- `backend/app/routers/agenda_publica.py`: agenda publica por dominio.
-- `frontend/src/router/AppRouter.tsx`: rutas privadas y publicas del frontend.
-
-## Requisitos previos
-
-### Opcion 1: Docker
-
-- Docker
-- Docker Compose
-
-### Opcion 2: Ejecucion local
-
-- Python 3.13
-- Node.js 20 o superior
-- PostgreSQL
-- Redis
-
-## Variables de entorno
+## Architecture
 
 ### Backend
 
-Existe un archivo de referencia en `backend/.env.example`. Copia ese archivo a `backend/.env` y ajusta los valores segun tu entorno.
-
-Variables principales:
-
-- `DATABASE_URL`
-- `JWT_SECRET_KEY`
-- `JWT_ALGORITHM`
-- `REDIS_URL`
-- `CELERY_BROKER_URL`
-- `CELERY_RESULT_BACKEND`
-- `ENABLE_BACKGROUND_REMINDERS`
-- `BOOTSTRAP_REMINDERS_ON_STARTUP`
-- `REMINDER_MINUTES_BEFORE`
-- `REMINDER_PROCESSING_TIMEOUT_MINUTES`
-- `CORS_ORIGINS`
-- `ACCESS_TOKEN_EXPIRE_MINUTES`
-- `REFRESH_TOKEN_EXPIRE_DAYS`
-- `REFRESH_COOKIE_NAME`
-- `REFRESH_COOKIE_SECURE`
-- `REFRESH_COOKIE_SAMESITE`
+- FastAPI for the HTTP API
+- SQLAlchemy 2.0 for ORM and persistence
+- Alembic for schema migrations
+- PostgreSQL-oriented design
+- Celery + Redis for background reminder scheduling
+- SlowAPI for rate limiting
+- Pydantic schemas and settings management
 
 ### Frontend
 
-Crea `frontend/.env` con:
+- React 18 + TypeScript
+- Vite for tooling and bundling
+- Axios for API integration
+- Tailwind CSS for UI styling
+- FullCalendar for agenda visualization
+- Vitest and Playwright for frontend testing
 
-```env
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
+## Core Workflows
 
-## Como correr el proyecto
+### 1. Tenant onboarding
 
-### Opcion recomendada: Docker Compose
+The API allows registering a business and bootstrapping its first admin user. From that point on, all protected operations are scoped to that tenant.
 
-Desde la raiz del repositorio:
+### 2. Internal scheduling
 
-```bash
-docker compose up --build -d
-```
+Authenticated staff can manage clients, services, employees, business hours, and appointments from the private application. Appointment creation and updates validate tenant ownership and reject overlapping bookings.
 
-Servicios levantados:
+### 3. Public reservation flow
 
-- `db`: PostgreSQL
-- `redis`: Redis
-- `api`: FastAPI en `http://127.0.0.1:8000`
-- `worker`: Celery para recordatorios
+Each business exposes a public booking path where end users can:
 
-Verificar estado:
+- browse active services
+- consult available time slots
+- create a reservation without logging in
 
-```bash
-docker compose ps
-docker compose logs --tail=200 api
-docker compose logs --tail=200 worker
-```
+This flow is tenant-aware and checks both business hours and existing appointments before confirming a booking.
 
-La API expone un health check en:
+### 4. Reminder orchestration
+
+When appointments change, reminder jobs are synchronized and scheduled for asynchronous processing. The project includes bootstrap logic to recover pending reminders on application startup.
+
+## Engineering Highlights
+
+- Clear layering: `Routers -> Services -> CRUD -> Models`
+- Multi-tenant domain model centered on `negocio`
+- Role restrictions for staff access
+- Anti-overbooking logic in both private and public flows
+- Persistent reminder job tracking to avoid duplicate scheduling
+- Backend tests covering appointment and public booking behavior
+- Frontend test split by unit, integration, and e2e scopes
+
+## Repository Structure
 
 ```text
-http://127.0.0.1:8000/health
+backend/
+  app/
+    core/
+    crud/
+    db/
+    dependencies/
+    events/
+    models/
+    routers/
+    schemas/
+    services/
+    tasks/
+  alembic/
+  tests/
+
+frontend/
+  src/
+  tests/
+
+docs/
+.github/
 ```
 
-### Opcion local: backend
+## Current State
 
-Desde `backend/`:
+This is a working professional prototype with real architectural decisions already implemented. A few pieces are still intentionally lightweight:
+
+- notification delivery is currently simulated through a service abstraction
+- the login flow currently requires `negocio_id` explicitly
+- the public reservation route is consolidated in the public agenda experience
+
+Those limitations are visible in the codebase and represent natural next steps for product hardening rather than missing fundamentals.
+
+## Running Locally
+
+Backend:
 
 ```bash
+cd backend
 pip install -r requirements.txt
 python -m alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-Si vas a usar recordatorios en segundo plano, ejecuta tambien:
+Frontend:
 
 ```bash
-celery -A app.core.celery_app:celery_app worker -Q reminders -l info --without-gossip --without-mingle
-```
-
-### Opcion local: frontend
-
-Desde `frontend/`:
-
-```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-Frontend disponible por defecto en:
+## Testing
 
-```text
-http://127.0.0.1:5173
-```
-
-## Migraciones
-
-Desde `backend/`:
-
-```bash
-python -m alembic upgrade head
-python -m alembic revision --autogenerate -m "describe_change"
-python -m alembic downgrade -1
-```
-
-## Pruebas
-
-### Backend
-
-Desde la raiz del proyecto:
+Backend:
 
 ```bash
 pytest backend/tests -q
 ```
 
-O desde `backend/`:
+Frontend:
 
 ```bash
-pytest tests -q
-```
-
-### Frontend
-
-Desde `frontend/`:
-
-```bash
-npm run lint
+cd frontend
 npm run test:unit
 npm run test:integration
 npm run test:e2e
 ```
 
-## Endpoints y rutas utiles
+## Author
 
-- API docs: `http://127.0.0.1:8000/docs`
-- Health check: `http://127.0.0.1:8000/health`
-- Frontend local: `http://127.0.0.1:5173`
-- Agenda publica: `http://127.0.0.1:5173/agenda/<dominio>`
-
-## Que subir a GitHub
-
-Sube el codigo fuente, configuraciones, migraciones y documentacion. En este proyecto, lo normal es subir:
-
-- `backend/app/`
-- `backend/alembic/`
-- `backend/requirements.txt`
-- `backend/.env.example`
-- `frontend/src/`
-- `frontend/tests/`
-- `frontend/package.json`
-- `frontend/package-lock.json`
-- `docker-compose.yml`
-- `.gitignore`
-- `README.md`
-- `.github/workflows/` si usas CI
-
-No deberias subir:
-
-- `backend/.env`
-- `frontend/.env`
-- `backend/venv/`
-- `frontend/node_modules/`
-- `frontend/dist/`
-- caches temporales de pytest
-- logs, coberturas y archivos temporales del editor
-
-## Recomendaciones antes de publicar
-
-- Reemplaza secretos locales por valores seguros en produccion.
-- Verifica que ningun `.env` real quede trackeado antes del primer commit.
-- Si algun archivo sensible ya fue agregado por error, eliminalo del indice antes de subirlo.
-- Manten `backend/.env.example` como plantilla publica sin secretos reales.
-
-## Licencia
-
-Define aqui la licencia que vayas a usar para el repositorio, por ejemplo `MIT`.
+Built by Diego Chacón as a portfolio-grade SaaS booking platform focused on practical backend architecture, product workflows, and maintainable full-stack implementation.
