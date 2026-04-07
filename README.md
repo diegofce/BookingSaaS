@@ -91,6 +91,18 @@ When appointments change, reminder jobs are synchronized and scheduled for async
 - Backend tests covering appointment and public booking behavior
 - Frontend test split by unit, integration, and e2e scopes
 
+## Technical Challenges
+
+- Enforcing tenant isolation consistently across authentication, services, and persistence instead of relying only on frontend context.
+- Preventing double booking while still generating usable public availability from business hours and existing appointments.
+- Keeping reminder jobs synchronized with appointment lifecycle changes, including rescheduling, cancellation, and startup recovery.
+
+## Results
+
+- A full-stack SaaS prototype with realistic business workflows instead of a basic CRUD sample.
+- A backend structured for maintainability, with clear service boundaries and migration-backed data modeling.
+- A portfolio project that demonstrates practical product thinking, multi-tenant architecture, and operational concerns like async jobs and access control.
+
 ## Repository Structure
 
 ```text
